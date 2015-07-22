@@ -1,0 +1,10 @@
+{
+  "name": "SpaceInvadersNode",
+  "version": "0.0.0",
+  "description": "SpaceInvadersNode",
+  "main": "app.js",
+  "author": {
+    "name": "Ham",
+    "email": ""
+  }
+}
