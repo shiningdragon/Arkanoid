@@ -1,10 +1,15 @@
-﻿// git
-// sounds
+﻿// sounds
 // lives
 // ball dynamics
 // node
 // invaders
 // host
+
+/*
+
+Taken from http://www.dwmkerr.com/experiments/
+
+*/
 
 //*****************************************************************
 //***************************Game**********************************

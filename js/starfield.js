@@ -1,6 +1,6 @@
 /*
 	Starfield lets you take a div and turn it into a starfield.
-
+    Taken from http://www.dwmkerr.com/experiments/
 */
 
 //	Define the starfield class.
