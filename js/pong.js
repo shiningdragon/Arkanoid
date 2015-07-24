@@ -278,8 +278,8 @@ function Ball(x, y) {
     this.x = x;
     this.y = y;
     this.radius = 8;
-    //  theta is the angle the ball direction makes with the x axis. from 0 to 2PI, (3/2)PI is vertically up, PI/2 is verticall down
-    this.theta = (3/2) * Math.PI; 
+    //  theta is the angle the ball direction makes with the x axis. from -PI to PI, -PI/2 is vertically up, PI/2 is verticall down
+    this.theta = (-1/2) * Math.PI; 
 }
 
 PlayState.prototype.enter = function (game) {
@@ -291,7 +291,7 @@ PlayState.prototype.enter = function (game) {
     this.ball.y -= this.ball.radius / 2;
     
     // Set a random start direction for the ball
-    this.ball.theta = Random((7/12) * 2 * Math.PI, (11/12) * 2 * Math.PI);  //from 210 to 330 degrees
+    this.ball.theta = Random((-1/6) * Math.PI, (-5/6) * Math.PI);  //from -150 to -30 degrees
     
     //  Set the ship speed for this level, as well as invader params.
     var levelMultiplier = this.level * this.config.levelDifficultyMultiplier;
@@ -325,18 +325,17 @@ PlayState.prototype.update = function (game, dt) {
     // Check for collisions with the bounds and paddle
     if (this.ball.x <= game.gameBounds.left) {
         game.sounds.playSound('bang');
-        //if(this.ball.theta )
-        this.ball.theta = (this.ball.theta + Math.PI / 2) % (2 * Math.PI);
+        this.ball.theta = -1 * Math.PI - this.ball.theta;
     }
     
     if (this.ball.x >= game.gameBounds.right) {
         game.sounds.playSound('bang');
-        this.ball.theta = (this.ball.theta - Math.PI / 2) % (2 * Math.PI);
+        this.ball.theta = Math.PI - this.ball.theta;
     }
     
     if (this.ball.y <= game.gameBounds.top) {
         game.sounds.playSound('bang');
-        this.ball.theta = (this.ball.theta + Math.PI / 2) % (2 * Math.PI);
+        this.ball.theta = -this.ball.theta;
     }
     
     // Check for collisions with the paddle
@@ -344,7 +343,7 @@ PlayState.prototype.update = function (game, dt) {
         this.ball.x >= this.paddle.x - this.paddle.width / 2 && 
         this.ball.x <= this.paddle.x + this.paddle.width / 2) {
         game.sounds.playSound('bang');
-        this.ball.theta -= Math.PI;
+        this.ball.theta = -this.ball.theta;
     }
     
     // Check for collisions with the bottom    
