@@ -1,8 +1,6 @@
-﻿// sounds
-// lives
-// ball dynamics
+﻿// ball dynamics
 // node
-// invaders
+// blocks
 // host
 
 /*
@@ -19,8 +17,8 @@ function Game() {
     
     // Set the initial config.
     this.config = {
-        gameWidth: 600,
-        gameHeight: 400,
+        gameWidth: 500,
+        gameHeight: 325,
         fps: 50,
         debugMode: false,
         paddleSpeed: 200,
@@ -184,8 +182,9 @@ WelcomeState.prototype.enter = function () {
     // Create and load the sounds.
     game.sounds = new Sounds();
     game.sounds.init();
-    game.sounds.loadSound('bang', 'sounds/bang.wav');
-    game.sounds.loadSound('explosion', 'sounds/explosion.wav');
+    game.sounds.loadSound('pong', 'sounds/pong.wav');
+    game.sounds.loadSound('looselife', 'sounds/looselife.wav');
+    game.sounds.loadSound('gameover', 'sounds/gameover.wav');
 }
 
 WelcomeState.prototype.draw = function (game, dt, ctx) {
@@ -291,7 +290,7 @@ PlayState.prototype.enter = function (game) {
     this.ball.y -= this.ball.radius / 2;
     
     // Set a random start direction for the ball
-    this.ball.theta = Random((-1/6) * Math.PI, (-5/6) * Math.PI);  //from -150 to -30 degrees
+    this.ball.theta = this.getThetaStartAngle();
     
     //  Set the ship speed for this level, as well as invader params.
     var levelMultiplier = this.level * this.config.levelDifficultyMultiplier;
@@ -324,17 +323,17 @@ PlayState.prototype.update = function (game, dt) {
     
     // Check for collisions with the bounds and paddle
     if (this.ball.x <= game.gameBounds.left) {
-        game.sounds.playSound('bang');
+        game.sounds.playSound('pong');
         this.ball.theta = -1 * Math.PI - this.ball.theta;
     }
     
     if (this.ball.x >= game.gameBounds.right) {
-        game.sounds.playSound('bang');
+        game.sounds.playSound('pong');
         this.ball.theta = Math.PI - this.ball.theta;
     }
     
     if (this.ball.y <= game.gameBounds.top) {
-        game.sounds.playSound('bang');
+        game.sounds.playSound('pong');
         this.ball.theta = -this.ball.theta;
     }
     
@@ -342,7 +341,7 @@ PlayState.prototype.update = function (game, dt) {
     if (this.ball.y >= this.paddle.y - this.paddle.height / 2 && 
         this.ball.x >= this.paddle.x - this.paddle.width / 2 && 
         this.ball.x <= this.paddle.x + this.paddle.width / 2) {
-        game.sounds.playSound('bang');
+        game.sounds.playSound('pong');
         this.ball.theta = -this.ball.theta;
     }
     
@@ -377,18 +376,36 @@ PlayState.prototype.draw = function (game, dt, ctx) {
         this.ball.y - (this.ball.radius / 2), 
         this.ball.radius, 
         this.ball.radius);
+
+    // Draw lives
+    ctx.fillStyle = '#999999';
+    var lifeHeight = 8;
+    var lifeWidth = 18;
+    for (i = 0; i < game.lives ; i++) {
+        ctx.fillRect(
+            game.gameBounds.right - (i+1) * lifeWidth - i * 5, 
+            game.gameBounds.bottom + lifeHeight + 1, 
+            lifeWidth, 
+            lifeHeight);
+    }
 }
 
-PlayState.prototype.looseLife = function () {
-    
+PlayState.prototype.looseLife = function () {      
+
     game.lives = game.lives - 1;
     if (game.lives == 0) {
         game.moveToState(new GameOverState());
     } else {
+        game.sounds.playSound('looselife');
         this.ball.x = this.paddle.x;
         this.ball.y = this.paddle.y - (this.paddle.height / 2) - (this.ball.radius / 2);
-        this.ball.theta = Random(-150, 30);
+        this.ball.theta = this.getThetaStartAngle();
     }
+}
+
+// Return a suitable start angle
+PlayState.prototype.getThetaStartAngle = function() {
+    return Random((-1 / 6) * Math.PI, (-5 / 6) * Math.PI);  //from -150 to -30 degrees
 }
 
 //*****************************************************************
@@ -397,6 +414,10 @@ PlayState.prototype.looseLife = function () {
 
 function GameOverState() {
 
+}
+
+GameOverState.prototype.enter = function () {
+    game.sounds.playSound('gameover');
 }
 
 GameOverState.prototype.draw = function (game, dt, ctx) {
@@ -427,6 +448,14 @@ GameOverState.prototype.keyDown = function (game, keyCode) {
 //******************************Sounds ***************************
 //****************************************************************
 
+/*
+
+    Sounds
+
+    The sounds class is used to asynchronously load sounds and allow
+    them to be played.
+
+*/
 function Sounds() {
     
     //  The audio context.

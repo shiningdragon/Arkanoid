@@ -39,8 +39,9 @@
     <Content Include="index.html" />
     <Content Include="package.json" />
     <Content Include="sounds\bang.wav" />
-    <Content Include="sounds\explosion.wav" />
-    <Content Include="sounds\invaderkilled.wav" />
+    <Content Include="sounds\gameover.wav" />
+    <Content Include="sounds\looselife.wav" />
+    <Content Include="sounds\pong.wav" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="css\" />
