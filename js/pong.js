@@ -1,18 +1,16 @@
 ﻿// ball dynamics
-// node
 // blocks
 // host
 
 /*
 
-Taken from http://www.dwmkerr.com/experiments/
+Based on  http://www.dwmkerr.com/experiments/
 
 */
 
 //*****************************************************************
 //***************************Game**********************************
 //*****************************************************************
-
 function Game() {
     
     // Set the initial config.
@@ -23,7 +21,7 @@ function Game() {
         debugMode: false,
         paddleSpeed: 200,
         ballSpeed: 200,
-        levelDifficultyMultiplier: 0.2,
+        levelDifficultyMultiplier: 0.2
     };
     
     this.level = 1;
@@ -494,7 +492,7 @@ Sounds.prototype.loadSound = function (name, url) {
         req.send();
     } catch (e) {
         console.log("An exception occured getting sound the sound " + name + " this might be " +
-         "because the page is running from the file system, not a webserver.");
+         "because the page is running from the file system, not a webserver, use the node web server to run the site.");
         console.log(e);
     }
 };
