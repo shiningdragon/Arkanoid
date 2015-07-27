@@ -1,10 +1,9 @@
 ﻿// ball dynamics
-// blocks
 // host
 
 /*
 
-Based on  http://www.dwmkerr.com/experiments/
+Based in part on  http://www.dwmkerr.com/experiments/
 
 */
 
@@ -15,12 +14,12 @@ function Game() {
     
     // Set the initial config.
     this.config = {
-        gameWidth: 450,
-        gameHeight: 325,
+        gameWidth: 350,
+        gameHeight: 400,
         fps: 50,
         debugMode: false,
-        paddleSpeed: 200,
-        ballSpeed: 220,
+        paddleSpeed: 250,
+        ballSpeed: 200,
         blockDepth: 4,
         blockWidth: 25,
         blockHeight: 17,
@@ -288,13 +287,14 @@ function Ball(x, y) {
 }
 
 
-function Block(x, y, width, height, depth, column) {
+function Block(x, y, width, height, depth, column, colour) {
     this.x = x;
     this.y = y;
     this.depth = depth; // rank from top to bottom up to a maximum of blockDepth, zero indexed
     this.column = column; // column block is in from left to right, zero indexed
     this.width = width;
     this.height = height;
+    this.colour = colour;
 }
 
 PlayState.prototype.enter = function (game) {
@@ -316,10 +316,12 @@ PlayState.prototype.enter = function (game) {
     this.ball.theta = this.getThetaStartAngle();
 
     //  Create the blocks
+    var blockColours = ["#FF0000", "#0000FF", "#FFFF00", "#008000"];
     var blocks = [];
     var blockWidth = this.config.blockWidth;
     var blockHeight = this.config.blockHeight;
-    var blockSeperator = 2;
+    var blockSeperator = 1;
+    var topGap = blockHeight * 3; 
     var numColumns = (game.gameBounds.right - game.gameBounds.left) / (blockWidth + blockSeperator);
     numColumns = Math.floor(numColumns);
     blockSeperator = ((game.gameBounds.right - game.gameBounds.left) - (numColumns * blockWidth)) / (numColumns - 1);
@@ -327,9 +329,9 @@ PlayState.prototype.enter = function (game) {
         for (var j = 0; j < numColumns; ++j) {
             blocks.push(new Block(
                 game.gameBounds.left + (blockWidth / 2) + j*(blockWidth + blockSeperator),
-                game.gameBounds.top + (blockHeight / 2) + i * (blockHeight + blockSeperator),
+                topGap + game.gameBounds.top + (blockHeight / 2) + i * (blockHeight + blockSeperator),
                 blockWidth, blockHeight,
-                i, j));
+                i, j, blockColours[i % 4]));
         }     
     }
     this.blocks = blocks;
@@ -365,19 +367,32 @@ PlayState.prototype.update = function (game, dt) {
     // Check for collisions with the bounds and paddle
     if (this.ball.x <= game.gameBounds.left) {
         game.sounds.playSound('pong');
-        this.ball.theta = -1 * Math.PI - this.ball.theta;
+        this.reflectBallFromLeft();
     }
     
     if (this.ball.x >= game.gameBounds.right) {
         game.sounds.playSound('pong');
-        this.ball.theta = Math.PI - this.ball.theta;
+        this.reflectBallFromRight(); 
     }
     
     if (this.ball.y <= game.gameBounds.top) {
         game.sounds.playSound('pong');
-        this.ball.theta = -this.ball.theta;
+        this.reflectBallFromTop(); 
     }
     
+    // Check for collisions with the bottom    
+    if (this.ball.y >= game.gameBounds.bottom) {
+        this.looseLife();
+    }
+
+    // Check for collisions with the paddle
+    if (this.ball.y >= this.paddle.y - this.paddle.height / 2 && 
+        this.ball.x >= this.paddle.x - this.paddle.width / 2 && 
+        this.ball.x <= this.paddle.x + this.paddle.width / 2) {
+        game.sounds.playSound('pong');      
+        this.reflectBallFromPaddle();
+    }
+
     // Check for collisions with the blocks, we look for intersections of block sides and ball path
     for (var i = 0; i < this.blocks.length; ++i) {
         var block = this.blocks[i];
@@ -390,7 +405,7 @@ PlayState.prototype.update = function (game, dt) {
         var blockY2 = block.y - block.height / 2;
         if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {            
             hit = true;
-            this.ball.theta = -this.ball.theta;
+            this.reflectBallFromTop();
         }
 
         // Block right
@@ -401,7 +416,7 @@ PlayState.prototype.update = function (game, dt) {
             var blockY2 = block.y + block.height / 2;
             if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {
                 hit = true;
-                this.ball.theta = Math.PI - this.ball.theta;
+                this.reflectBallFromRight();
             }
         }
 
@@ -413,7 +428,7 @@ PlayState.prototype.update = function (game, dt) {
             var blockY2 = block.y + block.height / 2;
             if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {
                 hit = true;
-                this.ball.theta = -this.ball.theta;
+                this.reflectBallFromBottom();
             }
         }
 
@@ -425,8 +440,8 @@ PlayState.prototype.update = function (game, dt) {
             var blockY2 = block.y + block.height / 2;
             if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {
                 hit = true;
-                this.ball.theta = -1 * Math.PI - this.ball.theta;
-             }
+                this.reflectBallFromLeft();
+            }
         }
 
         if (hit) {
@@ -434,50 +449,54 @@ PlayState.prototype.update = function (game, dt) {
             game.sounds.playSound('beep');
             break;
         }
-    }    
-
-    // Check for collisions with the paddle
-    if (this.ball.y >= this.paddle.y - this.paddle.height / 2 && 
-        this.ball.x >= this.paddle.x - this.paddle.width / 2 && 
-        this.ball.x <= this.paddle.x + this.paddle.width / 2) {
-        
-        // Some better ball dynamics
-        var currentPaddleSpeedSpeed = this.paddle.last_x - this.paddle.x;
-        if (currentPaddleSpeedSpeed > 0) {
-            game.sounds.playSound('pong');
-            this.ball.theta = -this.ball.theta;
-            var adjuster = 1 * (25 / 180) * Math.PI;
-            var newTheta = this.ball.theta - adjuster;
-            if (newTheta > -1 * Math.PI) {
-                //this.ball.theta = newTheta
-            }
-
-        }
-        else if (currentPaddleSpeedSpeed < 0) {
-            game.sounds.playSound('pong');
-            this.ball.theta = -this.ball.theta;
-            var adjuster = 1 * (25 / 180) * Math.PI;
-            var newTheta = this.ball.theta + adjuster;
-            if (newTheta < 0) {
-                //this.ball.theta = newTheta
-            }
-        }
-        else {
-            game.sounds.playSound('pong');
-            this.ball.theta = -this.ball.theta;
-        }
-    }
-    
-    // Check for collisions with the bottom    
-    if (this.ball.y >= game.gameBounds.bottom) {
-        this.looseLife();
-    }
+    } 
 
     // Check if we can move to the next level
     if (this.blocks.length == 0) {
         game.level = game.level + 1;
         game.moveToState(new LevelIntroState(game.level));
     }
+}
+
+PlayState.prototype.reflectBallFromPaddle = function () {
+    // Some better ball dynamics
+    var currentPaddleSpeedSpeed = this.paddle.last_x - this.paddle.x;
+    if (currentPaddleSpeedSpeed > 0) {
+        var adjuster = 1 * (25 / 180) * Math.PI;
+        var newTheta = theta - adjuster;
+        if (newTheta > -1 * Math.PI) {
+                //this.ball.theta = newTheta
+        }
+        this.ball.theta = -1* this.ball.theta;
+
+    }
+    else if (currentPaddleSpeedSpeed < 0) {
+        var adjuster = 1 * (25 / 180) * Math.PI;
+        var newTheta = theta + adjuster;
+        if (newTheta < 0) {
+                //this.ball.theta = newTheta
+        }
+        this.ball.theta = -1 * this.ball.theta;
+    }
+    else {
+        this.ball.theta = -1 * this.ball.theta;
+    }
+}
+
+PlayState.prototype.reflectBallFromTop = function () {
+    this.ball.theta = -1 * this.ball.theta;
+}
+
+PlayState.prototype.reflectBallFromBottom = function () {
+    this.ball.theta = -1 * this.ball.theta;
+}
+
+PlayState.prototype.reflectBallFromLeft = function () {
+    this.ball.theta = -1 * Math.PI - this.ball.theta;
+}
+
+PlayState.prototype.reflectBallFromRight = function () {
+    this.ball.theta = Math.PI - this.ball.theta;
 }
 
 PlayState.prototype.lineIntersect = function(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y)
@@ -522,10 +541,10 @@ PlayState.prototype.draw = function (game, dt, ctx) {
         this.ball.radius, 
         this.ball.radius);
     
-    //  Draw Blocks
-    ctx.fillStyle = '#006600';
+    //  Draw Blocks    
     for (var i = 0; i < this.blocks.length; i++) {
         var block = this.blocks[i];
+        ctx.fillStyle = block.colour;
         ctx.fillRect(block.x - block.width / 2, block.y - block.height / 2, block.width, block.height);
     }
 
