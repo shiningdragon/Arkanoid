@@ -3,7 +3,7 @@
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
-    <Name>SpaceInvadersVsPong</Name>
+    <Name>Arkanoid</Name>
     <RootNamespace>SpaceInvadersNode</RootNamespace>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
@@ -32,13 +32,15 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="app.js" />
-    <Compile Include="js\pong.js" />
+    <Compile Include="js\arkanoid.js" />
     <Compile Include="js\starfield.js" />
     <Content Include="css\core.css" />
     <Content Include="css\typeography.css" />
     <Content Include="index.html" />
     <Content Include="package.json" />
+    <Content Include="README.md" />
     <Content Include="sounds\bang.wav" />
+    <Content Include="sounds\beep.wav" />
     <Content Include="sounds\gameover.wav" />
     <Content Include="sounds\looselife.wav" />
     <Content Include="sounds\pong.wav" />

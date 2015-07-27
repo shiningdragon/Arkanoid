@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "SpaceInvadersVsPong", "SpaceInvadersVsPong.njsproj", "{D4384592-F985-478B-A9C6-4CA8C067DF1D}"
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "Arkanoid", "Arkanoid.njsproj", "{D4384592-F985-478B-A9C6-4CA8C067DF1D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
