@@ -23,7 +23,7 @@ function Game() {
         blockDepth: 4,
         blockWidth: 25,
         blockHeight: 17,
-        levelDifficultyMultiplier: 0.2
+        levelDifficultyMultiplier: 0.33
     };
     
     this.level = 1;
@@ -408,54 +408,12 @@ PlayState.prototype.update = function (game, dt) {
     for (var i = 0; i < this.blocks.length; ++i) {
         var block = this.blocks[i];
         
-        var hit = false;
-        // Block top
-        var blockX1 = block.x - block.width / 2;
-        var blockY1 = block.y - block.height / 2;
-        var blockX2 = block.x + block.width / 2;
-        var blockY2 = block.y - block.height / 2;
-        if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {            
-            hit = true;
-            this.reflectBallFromTop(this.ball);
-        }
+        var blockCollision = this.rectangleIntersect(
+            block.x, block.y, block.width, block.height, 
+            this.ball.x, this.ball.y, ballWidth, ballWidth);
 
-        // Block right
-        if (!hit) {
-            var blockX1 = block.x + block.width / 2;
-            var blockY1 = block.y - block.height / 2;
-            var blockX2 = block.x + block.width / 2;
-            var blockY2 = block.y + block.height / 2;
-            if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {
-                hit = true;
-                this.reflectBallFromRight(this.ball);
-            }
-        }
-
-        // Block bottom
-        if (!hit) {
-            var blockX1 = block.x - block.width / 2;
-            var blockY1 = block.y + block.height / 2;
-            var blockX2 = block.x + block.width / 2;
-            var blockY2 = block.y + block.height / 2;
-            if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {
-                hit = true;
-                this.reflectBallFromBottom(this.ball);
-            }
-        }
-
-        // Block left
-        if (!hit) {
-            var blockX1 = block.x - block.width / 2;
-            var blockY1 = block.y - block.height / 2;
-            var blockX2 = block.x - block.width / 2;
-            var blockY2 = block.y + block.height / 2;
-            if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {
-                hit = true;
-                this.reflectBallFromLeft(this.ball);
-            }
-        }
-
-        if (hit) {
+        if (blockCollision) {
+            this.reflectBallFromBlock(this.ball, block);
             this.blocks.splice(i, 1);
             game.sounds.playSound('beep');
             break;
@@ -467,6 +425,66 @@ PlayState.prototype.update = function (game, dt) {
         game.level = game.level + 1;
         game.moveToState(new LevelIntroState(game.level));
     }
+}
+
+PlayState.prototype.reflectBallFromBlock = function (ball, block) {
+
+    // So we know that the ball collide with this block, but where does it collide
+    var balltlx = ball.x - ball.radius;
+    var balltly = ball.y - ball.radius;
+    var balltrx = ball.x + ball.radius;
+    var balltry = ball.y - ball.radius;
+    var ballblx = ball.x - ball.radius;
+    var ballbly = ball.y + ball.radius;
+    var ballbrx = ball.x + ball.radius;
+    var ballbry = ball.y + ball.radius;
+
+    var balllasttlx = ball.last_x - ball.radius ;
+    var balllasttly = ball.last_y - ball.radius ;
+    var balllasttrx = ball.last_x + ball.radius ;
+    var balllasttry = ball.last_y - ball.radius ;
+    var balllastblx = ball.last_x - ball.radius ;
+    var balllastbly = ball.last_y + ball.radius ;
+    var balllastbrx = ball.last_x + ball.radius ;
+    var balllastbry = ball.last_y + ball.radius;
+
+    var blocktlx = block.x - block.width / 2;
+    var blocktly = block.y - block.height / 2;
+    var blocktrx = block.x + block.width / 2;
+    var blocktry = block.y - block.height / 2;
+    var blockblx = block.x - block.width / 2;
+    var blockbly = block.y + block.height / 2;
+    var blockbrx = block.x + block.width / 2;
+    var blockbry = block.y + block.height / 2;
+    
+    // block bottom
+    if (this.lineIntersect(balllasttlx, balllasttly, balltlx, balltly, blockblx, blockbly, blockbrx, blockbly)||
+        this.lineIntersect(balllasttrx, balllasttry, balltrx, balltry, blockblx, blockbly, blockbrx, blockbly)) {
+        this.reflectBallFromTop(ball);
+        return;
+    }
+
+    // block right
+    if (this.lineIntersect(balllasttlx, balllasttly, balltlx, balltly, blockbrx, blockbry, blocktrx, blocktry) ||
+        this.lineIntersect(balllastblx, balllastbly, ballblx, ballbly, blockbrx, blockbry, blocktrx, blocktry)) {
+        this.reflectBallFromRight(ball);
+        return;
+    }
+
+    // block left
+    if (this.lineIntersect(balllasttrx, balllasttry, balltrx, balltry, blockblx, blockbly, blocktlx, blocktly) ||
+        this.lineIntersect(balllastbrx, balllastbry, ballbrx, ballbry, blockblx, blockbly, blocktlx, blocktly)) {
+        this.reflectBallFromLeft(ball);
+        return;
+    }
+
+    // block top
+    if (this.lineIntersect(balllastblx, balllastbly, ballblx, ballbly, blocktlx, blocktly, blocktrx, blocktry) ||
+        this.lineIntersect(balllastbrx, balllastbry, ballbrx, ballbry, blocktlx, blocktly, blocktrx, blocktry)) {
+        this.reflectBallFromBottom(ball);
+        return;
+    }
+
 }
 
 PlayState.prototype.reflectBallFromPaddle = function (ball, paddle) {
