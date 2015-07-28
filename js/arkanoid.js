@@ -18,8 +18,8 @@ function Game() {
         gameHeight: 400,
         fps: 50,
         debugMode: false,
-        paddleSpeed: 250,
-        ballSpeed: 200,
+        paddleSpeed: 300,
+        ballSpeed: 250,
         blockDepth: 4,
         blockWidth: 25,
         blockHeight: 17,
@@ -265,6 +265,7 @@ function PlayState(config, level) {
     this.paddle = null;
     this.ball = null;
     this.blocks = [];
+    this.isBallReflectingFromPaddle = false;
 }
 
 // Game entities
@@ -279,7 +280,7 @@ function Paddle(x, y) {
 function Ball(x, y) {
     this.x = x;
     this.y = y;
-    this.radius = 8;
+    this.radius = 4;
     //  theta is the angle the ball direction makes with the x axis. from -PI to PI, -PI/2 is vertically up, PI/2 is verticall down
     this.theta = (-1 / 2) * Math.PI;
     this.last_x;
@@ -310,7 +311,7 @@ PlayState.prototype.enter = function (game) {
     
     // Create the ball
     this.ball = new Ball(this.paddle.x, this.paddle.y - (this.paddle.height / 2));
-    this.ball.y -= this.ball.radius / 2;
+    this.ball.y -= this.ball.radius;
     
     // Set a random start direction for the ball
     this.ball.theta = this.getThetaStartAngle();
@@ -367,17 +368,17 @@ PlayState.prototype.update = function (game, dt) {
     // Check for collisions with the bounds and paddle
     if (this.ball.x <= game.gameBounds.left) {
         game.sounds.playSound('pong');
-        this.reflectBallFromLeft();
+        this.reflectBallFromLeft(this.ball);
     }
     
     if (this.ball.x >= game.gameBounds.right) {
         game.sounds.playSound('pong');
-        this.reflectBallFromRight(); 
+        this.reflectBallFromRight(this.ball); 
     }
     
     if (this.ball.y <= game.gameBounds.top) {
         game.sounds.playSound('pong');
-        this.reflectBallFromTop(); 
+        this.reflectBallFromTop(this.ball); 
     }
     
     // Check for collisions with the bottom    
@@ -386,11 +387,21 @@ PlayState.prototype.update = function (game, dt) {
     }
 
     // Check for collisions with the paddle
-    if (this.ball.y >= this.paddle.y - this.paddle.height / 2 && 
-        this.ball.x >= this.paddle.x - this.paddle.width / 2 && 
-        this.ball.x <= this.paddle.x + this.paddle.width / 2) {
-        game.sounds.playSound('pong');      
-        this.reflectBallFromPaddle();
+    var ballWidth = 2 * this.ball.radius;
+    var paddleCollision = this.rectangleIntersect(
+        this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height, 
+         this.ball.x, this.ball.y, ballWidth, ballWidth);
+    if (paddleCollision) {             
+        if (this.isBallReflectingFromPaddle) {
+            // we have a collision but ball is already relecting from the paddle so ignore it
+        } else {
+            game.sounds.playSound('pong');
+            this.isBallReflectingFromPaddle = true;
+            this.reflectBallFromPaddle(this.ball, this.paddle);
+        }
+    }
+    else {
+        this.isBallReflectingFromPaddle = false;
     }
 
     // Check for collisions with the blocks, we look for intersections of block sides and ball path
@@ -405,7 +416,7 @@ PlayState.prototype.update = function (game, dt) {
         var blockY2 = block.y - block.height / 2;
         if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {            
             hit = true;
-            this.reflectBallFromTop();
+            this.reflectBallFromTop(this.ball);
         }
 
         // Block right
@@ -416,7 +427,7 @@ PlayState.prototype.update = function (game, dt) {
             var blockY2 = block.y + block.height / 2;
             if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {
                 hit = true;
-                this.reflectBallFromRight();
+                this.reflectBallFromRight(this.ball);
             }
         }
 
@@ -428,7 +439,7 @@ PlayState.prototype.update = function (game, dt) {
             var blockY2 = block.y + block.height / 2;
             if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {
                 hit = true;
-                this.reflectBallFromBottom();
+                this.reflectBallFromBottom(this.ball);
             }
         }
 
@@ -440,7 +451,7 @@ PlayState.prototype.update = function (game, dt) {
             var blockY2 = block.y + block.height / 2;
             if (this.lineIntersect(blockX1, blockY1, blockX2, blockY2, this.ball.last_x, this.ball.last_y, this.ball.x, this.ball.y)) {
                 hit = true;
-                this.reflectBallFromLeft();
+                this.reflectBallFromLeft(this.ball);
             }
         }
 
@@ -458,45 +469,41 @@ PlayState.prototype.update = function (game, dt) {
     }
 }
 
-PlayState.prototype.reflectBallFromPaddle = function () {
-    // Some better ball dynamics
-    var currentPaddleSpeedSpeed = this.paddle.last_x - this.paddle.x;
-    if (currentPaddleSpeedSpeed > 0) {
-        var adjuster = 1 * (25 / 180) * Math.PI;
-        var newTheta = theta - adjuster;
-        if (newTheta > -1 * Math.PI) {
-                //this.ball.theta = newTheta
-        }
-        this.ball.theta = -1* this.ball.theta;
-
+PlayState.prototype.reflectBallFromPaddle = function (ball, paddle) {
+    
+    // Angle of reflection is entirely down to where on the paddle the ball hits
+    var diff = ball.x - paddle.x;
+    var maxDiff = paddle.width / 2 + ball.radius;
+    var maxDeflection = (1 / 6) * Math.PI;
+    
+    // edge case 1
+    if (diff > maxDiff) {
+        ball.theta = -1 * maxDeflection;
+        return;
     }
-    else if (currentPaddleSpeedSpeed < 0) {
-        var adjuster = 1 * (25 / 180) * Math.PI;
-        var newTheta = theta + adjuster;
-        if (newTheta < 0) {
-                //this.ball.theta = newTheta
-        }
-        this.ball.theta = -1 * this.ball.theta;
+    // edge case 2
+    if (diff < -1 * maxDiff) {
+        ball.theta = -1 * Math.PI + maxDeflection;
+        return;
     }
-    else {
-        this.ball.theta = -1 * this.ball.theta;
-    }
+    
+    ball.theta = -1 * (Math.PI / 2) + (diff / maxDiff) * ((Math.PI/2) - maxDeflection);
 }
 
-PlayState.prototype.reflectBallFromTop = function () {
-    this.ball.theta = -1 * this.ball.theta;
+PlayState.prototype.reflectBallFromTop = function (ball) {
+    ball.theta = -1 * ball.theta;
 }
 
-PlayState.prototype.reflectBallFromBottom = function () {
-    this.ball.theta = -1 * this.ball.theta;
+PlayState.prototype.reflectBallFromBottom = function (ball) {
+    ball.theta = -1 * ball.theta;
 }
 
-PlayState.prototype.reflectBallFromLeft = function () {
-    this.ball.theta = -1 * Math.PI - this.ball.theta;
+PlayState.prototype.reflectBallFromLeft = function (ball) {
+    ball.theta = -1 * Math.PI - ball.theta;
 }
 
-PlayState.prototype.reflectBallFromRight = function () {
-    this.ball.theta = Math.PI - this.ball.theta;
+PlayState.prototype.reflectBallFromRight = function (ball) {
+    ball.theta = Math.PI - ball.theta;
 }
 
 PlayState.prototype.lineIntersect = function(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y)
@@ -515,6 +522,22 @@ PlayState.prototype.lineIntersect = function(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y,
     }
     
     return false; // No collision
+}
+
+PlayState.prototype.rectangleIntersect = function (c1_x, c1_y, width1, height1, c2_x, c2_y, width2, height2) {
+    
+    var p1_x = c1_x - width1 / 2;
+    var p1_y = c1_y - height1 / 2;
+    var p2_x = c2_x - width2 / 2;
+    var p2_y = c2_y - height2 / 2;
+
+    if (p1_x < p2_x + width2 &&
+        p1_x + width1 > p2_x &&
+        p1_y < p2_y + height2 &&
+        height1 + p1_y > p2_y) {
+        return true;
+    }
+    return false;
 }
 
 PlayState.prototype.draw = function (game, dt, ctx) {
@@ -536,10 +559,10 @@ PlayState.prototype.draw = function (game, dt, ctx) {
     // Draw Ball
     ctx.fillStyle = '#ff5555';
     ctx.fillRect(
-        this.ball.x - (this.ball.radius / 2), 
-        this.ball.y - (this.ball.radius / 2), 
-        this.ball.radius, 
-        this.ball.radius);
+        this.ball.x - (this.ball.radius), 
+        this.ball.y - (this.ball.radius), 
+        2 * this.ball.radius, 
+        2 * this.ball.radius);
     
     //  Draw Blocks    
     for (var i = 0; i < this.blocks.length; i++) {
@@ -569,7 +592,7 @@ PlayState.prototype.looseLife = function () {
     } else {
         game.sounds.playSound('looselife');
         this.ball.x = this.paddle.x;
-        this.ball.y = this.paddle.y - (this.paddle.height / 2) - (this.ball.radius / 2);
+        this.ball.y = this.paddle.y - (this.paddle.height / 2) - this.ball.radius;
         this.ball.theta = this.getThetaStartAngle();
     }
 }
