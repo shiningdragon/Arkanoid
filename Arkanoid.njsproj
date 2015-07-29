@@ -13,7 +13,7 @@
     <ProjectGuid>d4384592-f985-478b-a9c6-4ca8c067df1d</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>app.js</StartupFile>
+    <StartupFile>server.js</StartupFile>
     <StartWebBrowser>False</StartWebBrowser>
     <SearchPath>
     </SearchPath>
@@ -31,7 +31,7 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="app.js" />
+    <Compile Include="server.js" />
     <Compile Include="js\arkanoid.js" />
     <Compile Include="js\starfield.js" />
     <Content Include="css\core.css" />
