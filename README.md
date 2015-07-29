@@ -1,4 +1,4 @@
-The classic atari arcade game arkanoid written entirely in client side javascript.
+The classic atari arcade game arkanoid written entirely in client side javascript and html5
 
 Check it out at http://arkanoidsd.azurewebsites.net/
 
