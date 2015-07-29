@@ -1,7 +1,7 @@
 {
-  "name": "SpaceInvadersNode",
+  "name": "Arkanoid",
   "version": "0.0.0",
-  "description": "SpaceInvadersNode",
+  "description": "Arkanoid",
   "main": "app.js",
   "author": {
     "name": "Ham",
