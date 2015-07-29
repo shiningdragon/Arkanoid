@@ -44,6 +44,7 @@
     <Content Include="public\sounds\gameover.wav" />
     <Content Include="public\sounds\looselife.wav" />
     <Content Include="public\sounds\pong.wav" />
+    <Content Include="screenshot.jpg" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="public\css\" />
