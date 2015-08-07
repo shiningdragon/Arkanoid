@@ -681,33 +681,37 @@ Sounds.prototype.init = function () {
     
     //  Create the audio context, paying attention to webkit browsers.
     context = window.AudioContext || window.webkitAudioContext;
-    this.audioContext = new context();
+    if (typeof (context) !== "undefined" && context !== null) { 
+        this.audioContext = new context();
+    }
     this.mute = false;
 };
 
 Sounds.prototype.loadSound = function (name, url) {
     
-    //  Reference to ourselves for closures.
-    var self = this;
-    
-    //  Create an entry in the sounds object.
-    this.sounds[name] = null;
-    
-    //  Create an asynchronous request for the sound.
-    var req = new XMLHttpRequest();
-    req.open('GET', url, true);
-    req.responseType = 'arraybuffer';
-    req.onload = function () {
-        self.audioContext.decodeAudioData(req.response, function (buffer) {
-            self.sounds[name] = { buffer: buffer };
-        });
-    };
-    try {
-        req.send();
-    } catch (e) {
-        console.log("An exception occured getting sound the sound " + name + " this might be " +
+    if (this.audioContext != null) {
+        //  Reference to ourselves for closures.
+        var self = this;
+        
+        //  Create an entry in the sounds object.
+        this.sounds[name] = null;
+        
+        //  Create an asynchronous request for the sound.
+        var req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.responseType = 'arraybuffer';
+        req.onload = function () {
+            self.audioContext.decodeAudioData(req.response, function (buffer) {
+                self.sounds[name] = { buffer: buffer };
+            });
+        };
+        try {
+            req.send();
+        } catch (e) {
+            console.log("An exception occured getting sound the sound " + name + " this might be " +
          "because the page is running from the file system, not a webserver, use the node web server to run the site.");
-        console.log(e);
+            console.log(e);
+        }
     }
 };
 
