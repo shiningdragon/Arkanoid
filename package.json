@@ -9,5 +9,10 @@
   },
   "dependencies": {
     "express": "^4.13.1"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-git": "^1.2.4",
+    "yargs": "^3.18.0"
   }
 }
